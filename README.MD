@@ -21,7 +21,7 @@
 
 ## Establishing communication between car and sensor
 
-## Making sesnsor a receiver
-## Publish weather data to car
-## Publish hazards data to car
+### Making sesnsor a receiver
+### Publish weather data to car
+### Publish hazards data to car
 
