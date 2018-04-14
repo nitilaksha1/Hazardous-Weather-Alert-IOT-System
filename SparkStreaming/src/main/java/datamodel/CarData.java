@@ -5,9 +5,9 @@ import lombok.*;
 import java.io.Serializable;
 
 @AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
+@NoArgsConstructor
 @ToString
 public class CarData implements Serializable {
     private String carId;

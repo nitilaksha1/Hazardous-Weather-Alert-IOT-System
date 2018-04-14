@@ -38,7 +38,7 @@ public class CarDataProducer {
                     CarData carData = new CarData(UUID.randomUUID().toString(),
                             coords[0],
                             coords[1],
-                            new DateTime(),
+                            new DateTime().getMillis(),
                             speed,
                             fuelLevel);
                     carDataList.add(carData);
