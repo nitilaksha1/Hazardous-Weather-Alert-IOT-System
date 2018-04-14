@@ -1,7 +1,6 @@
 package datamodel;
 
 import lombok.*;
-
 import java.io.Serializable;
 
 @AllArgsConstructor
