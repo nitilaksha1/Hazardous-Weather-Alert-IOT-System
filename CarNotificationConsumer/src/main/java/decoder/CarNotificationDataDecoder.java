@@ -23,5 +23,4 @@ public class CarNotificationDataDecoder implements Decoder<CarNotificationData> 
         }
         return carNotificationData;
     }
-
 }

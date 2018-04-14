@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 
 public class CarNotificationDataDeserializer implements Deserializer<CarNotificationData> {
-
     public void close() {
     }
 
