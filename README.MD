@@ -1,5 +1,16 @@
 # Distributed Systems Project
 
+## Rules
+
+* Temperature
+* Precipitation - rain, snow, hail
+* Wind seped
+* Visibility
+
+* Blizzards - Wind speeds > 35 mph; Visibility < querter mile; Precipitation - snow and time elapsed > 3 
+* Wind Advisory - Strong winds > 40 mph; Time elapsed > 2 hrs
+* Fog - Visibility < 2 miles; Time elapsed > 1
+
 ## Functionality related to vehicles
 
 ### Car Data class

@@ -11,10 +11,12 @@ import java.io.Serializable;
 @Setter
 @NoArgsConstructor
 public class WeatherData implements Serializable {
-    private String stationId;
-    private String latitude;
-    private String longitude;
+    private String sensorId;
+    private double latitude;
+    private double longitude;
     private Long timestamp;
     private double temperature;
-    private double preciptation;
+    private Precipitation preciptation;
+    private double windSpeed;
+    private double visibility;
 }
