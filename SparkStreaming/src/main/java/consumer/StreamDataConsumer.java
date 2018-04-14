@@ -1,7 +1,11 @@
 package consumer;
 
 import datamodel.CarData;
+import datamodel.CarNotificationData;
 import decoder.CarDataDecoder;
+import kafka.javaapi.producer.Producer;
+import kafka.producer.KeyedMessage;
+import kafka.producer.ProducerConfig;
 import kafka.serializer.StringDecoder;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
@@ -11,14 +15,14 @@ import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 import utils.reader.PropertyFileReader;
-
 import java.util.*;
 
 public class StreamDataConsumer {
     private static final Logger LOGGER = Logger.getLogger(StreamDataConsumer.class);
 
     public void consume() {
-        Properties properties = PropertyFileReader.readPropertyFile();
+        Properties properties = PropertyFileReader.readConsumerPropertyFile();
+        Properties prodProperties = PropertyFileReader.readProducerPropertyFile();
         SparkConf sparkConf = new SparkConf()
                 .setAppName(properties.getProperty("com.iot.app.spark.app.name"))
                 .setMaster(properties.getProperty("com.iot.app.spark.master"));
@@ -45,9 +49,9 @@ public class StreamDataConsumer {
         );
 
         LOGGER.info("Started stream processing...");
-
         JavaDStream<CarData> nonFilteredDataStream = directKafkaStream.map(tuple -> tuple._2());
-        nonFilteredDataStream.print();
+        produceCarNotifications(nonFilteredDataStream, prodProperties);
+        //nonFilteredDataStream.print();
 
         javaStreamingContext.start();
         try {
@@ -55,5 +59,33 @@ public class StreamDataConsumer {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private void produceCarNotifications(JavaDStream<CarData> dStream, Properties properties) {
+        dStream.foreachRDD(
+                rdd -> {
+                    for (CarData carData : rdd.collect()) {
+                        Properties producerProperties = new Properties();
+                        producerProperties.put("zookeeper.connect",
+                                properties.getProperty("com.iot.app.kafka.zookeeper"));
+                        producerProperties.put("metadata.broker.list",
+                                properties.getProperty("com.iot.app.kafka.brokerlist"));
+                        producerProperties.put("request.required.acks", "1");
+                        producerProperties.put("serializer.class", "encoder.CarNotificationDataEncoder");
+
+                        Producer<String, CarNotificationData> producer = new Producer<>
+                                (new ProducerConfig(producerProperties));
+                        String topic = properties.getProperty("com.iot.app.kafka.topic");
+                        Random random = new Random();
+
+                        CarNotificationData carNotificationData = new CarNotificationData(carData.getCarId(),
+                                carData.getSpeed());
+
+                        KeyedMessage<String, CarNotificationData> keyedMessage = new KeyedMessage<>(topic,
+                                carNotificationData);
+                        producer.send(keyedMessage);
+                    }
+                }
+        );
     }
 }
