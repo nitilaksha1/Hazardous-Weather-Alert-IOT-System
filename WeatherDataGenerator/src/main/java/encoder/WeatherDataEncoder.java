@@ -17,10 +17,10 @@ public class WeatherDataEncoder implements Encoder<WeatherData>, Decoder<Weather
 
     public WeatherDataEncoder(VerifiableProperties verifiableProperties) {}
 
-    public byte[] toBytes(WeatherData carData) {
+    public byte[] toBytes(WeatherData weatherData) {
         byte[] byteArray = null;
         try {
-            String objectAsString = objectMapper.writeValueAsString(carData);
+            String objectAsString = objectMapper.writeValueAsString(weatherData);
             LOGGER.info(objectAsString);
             byteArray = objectAsString.getBytes();
             return byteArray;
@@ -31,12 +31,12 @@ public class WeatherDataEncoder implements Encoder<WeatherData>, Decoder<Weather
     }
 
     public WeatherData fromBytes(byte[] byteArray) {
-        WeatherData carData = null;
+        WeatherData weatherData = null;
         try {
-            carData = objectMapper.readValue(byteArray, WeatherData.class);
+            weatherData = objectMapper.readValue(byteArray, WeatherData.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return carData;
+        return weatherData;
     }
 }

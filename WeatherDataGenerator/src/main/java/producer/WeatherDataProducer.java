@@ -32,18 +32,19 @@ public class WeatherDataProducer {
             for(int i = 0; i < numSensors; i++) {
                 double temperature = random.nextInt(40 - 30) + 40;
                 double precipitation = random.nextInt(4) + 0;
+                String[] coords = getCoordinates().split(",");
 
                 for(int j = 0; j < numEvents; j++) {
-                    String[] coords = getCoordinates().split(",");
                     WeatherData weatherData = new WeatherData(UUID.randomUUID().toString(),
                             coords[0],
                             coords[1],
-                            new DateTime(),
+                            new DateTime().getMillis(),
                             temperature,
                             precipitation);
                     weatherDataList.add(weatherData);
                 }
             }
+
             Collections.shuffle(weatherDataList);
             for(WeatherData weatherData : weatherDataList) {
                 KeyedMessage<String, WeatherData> keyedMessage = new KeyedMessage<String, WeatherData>(topic, weatherData);
