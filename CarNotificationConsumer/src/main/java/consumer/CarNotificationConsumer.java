@@ -7,7 +7,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.log4j.Logger;
+import scala.collection.immutable.Stream;
+
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Properties;
 
 @AllArgsConstructor
@@ -26,15 +29,22 @@ public class CarNotificationConsumer {
         consumerProps.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         consumerProps.put("value.deserializer", "decoder.CarNotificationDataDeserializer");
         consumerProps.put("deserializer.class", "decoder.CarNotificationDataDecoder");
+        consumerProps.put("auto.offset.reset", "earliest");
 
         Consumer consumer = new KafkaConsumer<String,
                 CarNotificationData>(consumerProps);
         consumer.subscribe(Arrays.asList(properties.getProperty("com.iot.app.kafka.topic")));
 
         while (true) {
-            ConsumerRecords<String, CarNotificationData> records = consumer.poll(10);
-            for (ConsumerRecord<String, CarNotificationData> record : records)
-                System.out.printf("offset = %d, key = %s, value = %s\n", record.offset(), record.key(), record.value());
+            ConsumerRecords records = consumer.poll(0);
+            for (Object record : records) {
+                ConsumerRecord cr = (ConsumerRecord) record;
+                CarNotificationData carNotificationData = (CarNotificationData) cr.value();
+
+                System.out.println("Key = " + cr.key() + " CarId = " + carNotificationData.getCarId() +
+                " Car Speed = " + carNotificationData.getSpeed());
+            }
+                //System.out.printf("offset = %d, key = %s, value = %s\n", record.offset(), record.key(), record.value());
         }
     }
 }
