@@ -55,12 +55,4 @@ public class BlizzardSimulator implements WeatherDataSimulator {
 
         return new Producer<String, WeatherData>(new ProducerConfig(producerProperties));
     }
-
-    private String getCoordinates() {
-        Random rand = new Random();
-        int latPrefix = 33;
-        int longPrefix = -96;
-
-        return String.format("%s,%s", latPrefix + rand.nextFloat(), longPrefix + rand.nextFloat());
-    }
 }
