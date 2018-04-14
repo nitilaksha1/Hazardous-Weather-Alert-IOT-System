@@ -8,7 +8,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.log4j.Logger;
+import scala.collection.immutable.Stream;
+
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
@@ -19,7 +22,7 @@ public class CarNotificationConsumer {
 
     public void consumeNotificationEvent() {
         Properties consumerProps = new Properties();
-        consumerProps.put("bootstrap.servers", properties.getProperty("com.iot.app.kafka.zookeeper"));
+        consumerProps.put("bootstrap.servers", properties.getProperty("com.iot.app.kafka.brokerlist"));
         consumerProps.put("group.id", properties.getProperty("com.iot.app.kafka.consumer.groupid"));
         consumerProps.put("enable.auto.commit", "true");
         consumerProps.put("auto.commit.interval.ms", "1000");
@@ -27,6 +30,7 @@ public class CarNotificationConsumer {
         consumerProps.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         consumerProps.put("value.deserializer", "decoder.CarNotificationDataDeserializer");
         consumerProps.put("deserializer.class", "decoder.CarNotificationDataDecoder");
+        consumerProps.put("auto.offset.reset", "earliest");
 
         Consumer consumer = new KafkaConsumer<String,
                 CarNotificationData>(consumerProps);
@@ -40,9 +44,15 @@ public class CarNotificationConsumer {
         //consumer.seekToBeginning();
 
         while (true) {
-            ConsumerRecords<String, CarNotificationData> records = consumer.poll(10);
-            for (ConsumerRecord<String, CarNotificationData> record : records)
-                System.out.printf("offset = %d, key = %s, value = %s\n", record.offset(), record.key(), record.value());
+            ConsumerRecords records = consumer.poll(0);
+            for (Object record : records) {
+                ConsumerRecord cr = (ConsumerRecord) record;
+                CarNotificationData carNotificationData = (CarNotificationData) cr.value();
+
+                System.out.println("Key = " + cr.key() + " CarId = " + carNotificationData.getCarId() +
+                " Car Speed = " + carNotificationData.getSpeed());
+            }
+                //System.out.printf("offset = %d, key = %s, value = %s\n", record.offset(), record.key(), record.value());
         }
     }
 }
