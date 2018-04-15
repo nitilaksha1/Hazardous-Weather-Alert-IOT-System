@@ -26,7 +26,7 @@ public class BlizzardSimulator implements WeatherDataSimulator {
         LOGGER.info("Sending blizzard weather events ...");
 
         while(true) {
-            WeatherData weatherData = new WeatherData(UUID.randomUUID().toString(),
+            WeatherData weatherData = new WeatherData("weather-station-blizzard",
                         latitude,
                         longitude,
                         new DateTime().getMillis(),

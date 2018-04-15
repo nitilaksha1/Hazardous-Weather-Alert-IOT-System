@@ -15,6 +15,7 @@ public class CarDataProducer {
     private Properties properties;
 
     public void generateIotEvent(int numCars, int numEvents) {
+        String [] carIds = {"car-1", "car-2", "car-3", "car-4", "car-5"};
         Properties producerProperties = new Properties();
         producerProperties.put("zookeeper.connect", properties.getProperty("com.iot.app.kafka.zookeeper"));
         producerProperties.put("metadata.broker.list", properties.getProperty("com.iot.app.kafka.brokerlist"));
@@ -35,7 +36,7 @@ public class CarDataProducer {
 
                 for(int j = 0; j < numEvents; j++) {
                     String[] coords = getCoordinates().split(",");
-                    CarData carData = new CarData(UUID.randomUUID().toString(),
+                    CarData carData = new CarData(carIds[random.nextInt(4)],
                             coords[0],
                             coords[1],
                             new DateTime().getMillis(),
