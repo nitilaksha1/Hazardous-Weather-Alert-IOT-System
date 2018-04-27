@@ -1,9 +1,6 @@
 package consumer;
 
-import datamodel.CarData;
-import datamodel.CarNotificationData;
-import datamodel.Precipitation;
-import datamodel.WeatherData;
+import datamodel.*;
 import decoder.CarDataDecoder;
 import decoder.WeatherDataDecoder;
 import kafka.javaapi.producer.Producer;
@@ -112,11 +109,100 @@ public class StreamDataConsumer {
 
     }
 
+    private static boolean isBlizzardWeather(Precipitation precp, Double temperature,
+                                      Double windSpeed, Double visibility) {
+
+        if (precp == Precipitation.SNOW &&
+                temperature >= 10 && temperature <= 15 &&
+                windSpeed > 35 &&
+                visibility < 0.4)
+            return true;
+
+        return false;
+    }
+
+    private static boolean isFogWeather(Precipitation precp, Double visibility) {
+        if (precp == Precipitation.NORMAL
+                && visibility < 2)
+            return true;
+
+        return false;
+    }
+
+    private static boolean isWindyWeather(Precipitation precp, Double windSpeed) {
+        if (precp == Precipitation.NORMAL
+                && windSpeed > 40)
+            return true;
+
+        return false;
+    }
+
+    private static void produceWeatherHazardAlert(Properties properties, Double latitude,
+                                                  Double longitude, Double temperature,
+                                                  Double windSpeed, Double visibility,
+                                                  String weatherAlert) {
+        Properties producerProperties = new Properties();
+        producerProperties.put("zookeeper.connect",
+                properties.getProperty("com.iot.app.kafka.zookeeper"));
+        producerProperties.put("metadata.broker.list",
+                properties.getProperty("com.iot.app.kafka.brokerlist"));
+        producerProperties.put("request.required.acks", "1");
+        producerProperties.put("serializer.class", "encoder.WeatherNotificationDataEncoder");
+
+        Producer<String, WeatherNotificationData> producer = new Producer<>
+                (new ProducerConfig(producerProperties));
+        String topic = properties.getProperty("com.iot.app.kafka.weather.topic");
+        Random random = new Random();
+
+        WeatherNotificationData weatherNotificationData= new WeatherNotificationData(latitude,
+                longitude, temperature, windSpeed, visibility, weatherAlert);
+
+        KeyedMessage<String, WeatherNotificationData> keyedMessage = new KeyedMessage<>(topic,
+                weatherNotificationData);
+        producer.send(keyedMessage);
+    }
+
+    private static void sendWeatherNotification(Properties properties, Precipitation precp,
+                                                Double temperature, Double windSpeed,
+                                                Double visibility) {
+        if (isBlizzardWeather(precp, temperature, windSpeed, visibility)) {
+            //Send notification to sensor
+            produceWeatherHazardAlert(properties,
+                    Double.parseDouble("0"),
+                    Double.parseDouble("0"),
+                    temperature,
+                    windSpeed,
+                    visibility,
+                    "Blizzard conditions ahead! Travel not recommended");
+
+        }
+        else if (isFogWeather(precp, visibility)) {
+            //Send notification to sensor
+            produceWeatherHazardAlert(properties,
+                    Double.parseDouble("0"),
+                    Double.parseDouble("0"),
+                    temperature,
+                    windSpeed,
+                    visibility,
+                    "Thick Fog conditions ahead! Drive slowly");
+        }
+        else if (isWindyWeather(precp, windSpeed)) {
+            //Send notification to sensor
+            produceWeatherHazardAlert(properties,
+                    Double.parseDouble("0"),
+                    Double.parseDouble("0"),
+                    temperature,
+                    windSpeed,
+                    visibility,
+                    "Windy conditions ahead! High-rise vehicles should proceed with caution!");
+        }
+    }
+
     /*
      * This function manipulates the stream of WeatherData objects in order to compute average of all the
      * weather data attributes
      */
-    private void aggregateWeatherData(JavaDStream<WeatherData> weatherDataStream) {
+    private void aggregateWeatherData(Properties properties, JavaDStream<WeatherData> weatherDataStream) {
         //Convert (WeatherData -> <(sensorId, Precipitation) -> (temperature, windspeed, visibility, keycount)>)
         //Keycount is maintained so that I can get the denominator for calculating average.
         //For this I just add up all the 1's in the fourth field of the tuple
@@ -147,6 +233,21 @@ public class StreamDataConsumer {
         JavaDStream<Tuple2<Tuple2<String, Precipitation>, Tuple3<Double, Double, Double>>> avgWeatherStream =
                 weathersumStream
                 .map(x -> new Tuple2(x._1, avgWeatherDataFunc(x._2)));
+
+        //Analyze each windowed record and send weather notification to sensor
+        //Now since weather updates happen per window it makes sense for sensor also
+        //to broadcast weather update for duration of a window
+        avgWeatherStream.foreachRDD((rdd) -> {
+            List<Tuple2<Tuple2<String, Precipitation>, Tuple3<Double, Double, Double>>>
+                    avgWeatherRecord = rdd.collect();
+
+            for (Tuple2<Tuple2<String, Precipitation>, Tuple3<Double, Double, Double>>
+                    record : avgWeatherRecord) {
+                Tuple2<String, Precipitation> key = record._1;
+                Tuple3<Double, Double, Double> value = record._2;
+                sendWeatherNotification(properties, key._2, value._1(), value._2(), value._3());
+            }
+        });
 
         //Print average weather statistics for each sensorId
         avgWeatherStream.print();
@@ -201,7 +302,7 @@ public class StreamDataConsumer {
         );
 
         JavaDStream<WeatherData> nonFilteredWeatherDataStream = weatherKafkaStream.map(tuple -> tuple._2());
-        aggregateWeatherData(nonFilteredWeatherDataStream);
+        aggregateWeatherData(prodProperties, nonFilteredWeatherDataStream);
         //produceCarNotifications(nonFilteredDataStream, prodProperties);
         //nonFilteredDataStream.print();
 
@@ -227,7 +328,7 @@ public class StreamDataConsumer {
 
                         Producer<String, CarNotificationData> producer = new Producer<>
                                 (new ProducerConfig(producerProperties));
-                        String topic = properties.getProperty("com.iot.app.kafka.topic");
+                        String topic = properties.getProperty("com.iot.app.kafka.car.topic");
                         Random random = new Random();
 
                         CarNotificationData carNotificationData = new CarNotificationData(carData.getCarId(),
