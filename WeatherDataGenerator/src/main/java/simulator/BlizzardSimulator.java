@@ -33,7 +33,7 @@ public class BlizzardSimulator implements WeatherDataSimulator {
                     random.nextInt(5) + 10,
                     Precipitation.SNOW,
                     random.nextInt(10) + 45,
-                    0.25);
+                    0.15);
 
             producer.send(new KeyedMessage<String, WeatherData>(topic, weatherData));
 
