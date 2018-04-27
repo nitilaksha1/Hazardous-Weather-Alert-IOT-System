@@ -78,33 +78,33 @@ public class StreamDataConsumer {
      * The last value in the tuple is keycount which shows number of values associated with the key
      * i.e the sensorid and precipiation
      */
-    private static Tuple4 addWeatherData (Tuple4<Double, Double, Double, Integer> v1,
-                                          Tuple4<Double, Double, Double, Integer> v2) {
-        return new Tuple4(v1._1() + v2._1(),
-                v1._2() + v2._2(),
-                v1._3() + v2._3(),
-                v1._4() + v2._4());
+    private static Tuple6 addWeatherData (Tuple6<Double, Double, Double, Double, Double, Integer> v1,
+                                          Tuple6<Double, Double, Double, Double, Double, Integer> v2) {
+        return new Tuple6(v1._1(), v1._2(), v1._3() + v2._3(),
+                v1._4() + v2._4(),
+                v1._5() + v2._5(),
+                v1._6() + v2._6());
     }
 
     /*
      * This function converts multiple (key-> value) pairs to one single (key -> value) pair by adding up all
      * the values associated with a single key
      */
-    private static Tuple3<Double, Double, Double> avgWeatherDataFunc
-            (Tuple4<Double, Double, Double, Integer> t) {
-        return new Tuple3<>(t._1()/t._4(), t._2()/t._4(), t._3()/t._4());
+    private static Tuple5<Double, Double, Double, Double, Double> avgWeatherDataFunc
+            (Tuple6<Double, Double, Double, Double, Double, Integer> t) {
+        return new Tuple5<>(t._1(), t._2(), t._3()/t._6(), t._4()/t._6(), t._5()/t._6());
     }
 
     /*
     * This function just adds the weather data values for two tuples. This function is called over and over
     * until each item in the stream (during a windows) has been added.
      */
-    private static Tuple2<Tuple2<String, Precipitation>, Tuple4<Double, Double, Double, Integer>> weatherFunc
-            (
-                    Tuple2<Tuple2<String, Precipitation>, Tuple4<Double, Double, Double, Integer>> t1,
-                    Tuple2<Tuple2<String, Precipitation>, Tuple4<Double, Double, Double, Integer>> t2
+    private static Tuple2<Tuple2<String, Precipitation>,
+            Tuple6<Double, Double, Double, Double, Double, Integer>> weatherFunc (
+                    Tuple2<Tuple2<String, Precipitation>, Tuple6<Double, Double, Double, Double, Double, Integer>> t1,
+                    Tuple2<Tuple2<String, Precipitation>, Tuple6<Double, Double, Double, Double, Double, Integer>> t2
             ) {
-        return new Tuple2<Tuple2<String, Precipitation>, Tuple4<Double, Double, Double, Integer>>
+        return new Tuple2<Tuple2<String, Precipitation>, Tuple6<Double, Double, Double, Double, Double, Integer>>
                 (new Tuple2(t1._1._1, t1._1._2), addWeatherData(t1._2, t2._2));
 
     }
@@ -137,6 +137,15 @@ public class StreamDataConsumer {
         return false;
     }
 
+    /*
+     * This function gets the weather statistics aggregated for a window period. Based on the rules,
+     * it classifies weather among : Blizzard, fog and windy weather. The appropriate message is sent
+     * to hazardous_weather topic. For now it is one topic which receives all the updates. Each update
+     * Will contain data in the format given by WeatherNotificationData class. Basically every sensor will
+     * subscribing to the hazardous_weather topic will receive the notification. Now based on the lat and
+     * long the sensor will decide if the update is relevant to it (based on distance). If the update is
+     * relevant the sensor will send update to all cars connected to it
+     */
     private static void produceWeatherHazardAlert(Properties properties, Double latitude,
                                                   Double longitude, Double temperature,
                                                   Double windSpeed, Double visibility,
@@ -162,14 +171,14 @@ public class StreamDataConsumer {
         producer.send(keyedMessage);
     }
 
-    private static void sendWeatherNotification(Properties properties, Precipitation precp,
-                                                Double temperature, Double windSpeed,
+    private static void sendWeatherNotification(Properties properties, Precipitation precp, Double latitude,
+                                                Double longitude, Double temperature, Double windSpeed,
                                                 Double visibility) {
         if (isBlizzardWeather(precp, temperature, windSpeed, visibility)) {
             //Send notification to sensor
             produceWeatherHazardAlert(properties,
-                    Double.parseDouble("0"),
-                    Double.parseDouble("0"),
+                    latitude,
+                    longitude,
                     temperature,
                     windSpeed,
                     visibility,
@@ -179,8 +188,8 @@ public class StreamDataConsumer {
         else if (isFogWeather(precp, visibility)) {
             //Send notification to sensor
             produceWeatherHazardAlert(properties,
-                    Double.parseDouble("0"),
-                    Double.parseDouble("0"),
+                    latitude,
+                    longitude,
                     temperature,
                     windSpeed,
                     visibility,
@@ -189,8 +198,8 @@ public class StreamDataConsumer {
         else if (isWindyWeather(precp, windSpeed)) {
             //Send notification to sensor
             produceWeatherHazardAlert(properties,
-                    Double.parseDouble("0"),
-                    Double.parseDouble("0"),
+                    latitude,
+                    longitude,
                     temperature,
                     windSpeed,
                     visibility,
@@ -206,20 +215,24 @@ public class StreamDataConsumer {
         //Convert (WeatherData -> <(sensorId, Precipitation) -> (temperature, windspeed, visibility, keycount)>)
         //Keycount is maintained so that I can get the denominator for calculating average.
         //For this I just add up all the 1's in the fourth field of the tuple
-        JavaPairDStream<Tuple2<String, Precipitation>, Tuple4<Double, Double, Double, Integer>>
+        JavaPairDStream<Tuple2<String, Precipitation>,
+                Tuple6<Double, Double, Double, Double, Double, Integer>>
                 weatherDataPair= weatherDataStream.mapToPair((t) ->
                 new Tuple2(new Tuple2(t.getSensorId(), t.getPreciptation()),
-                        new Tuple4<>(
+                        new Tuple6<>(
+                                t.getLatitude(),
+                                t.getLongitude(),
                                 t.getTemperature(),
                                 t.getWindSpeed(),
                                 t.getVisibility(),
                                 1
                                 )));
 
-        //Convert <sensorId, Precipitation> -> <temperature, windspeed, visibility, keycount>
+        //Convert <sensorId, Precipitation> -> <lat, long, temperature, windspeed, visibility, keycount>
         //TO
         //<sensorId, Precipitation> -> <sum of temperatures, sum of windspeeds, sum of visiblity, sum of keycounts>
-        JavaDStream<Tuple2<Tuple2<String, Precipitation>, Tuple4<Double, Double, Double, Integer>>>
+        JavaDStream<Tuple2<Tuple2<String, Precipitation>,
+                Tuple6<Double, Double, Double, Double, Double, Integer>>>
                 weathersumStream = weatherDataPair.reduceByWindow(
                         (x,y) -> weatherFunc(x,y),
                         Durations.seconds(15),
@@ -230,7 +243,8 @@ public class StreamDataConsumer {
         //<sensorId, Precipitation> -> <sum of temperatures/sum of keycount,
         // sum of windspeeds / sum of keycount,
         // sum of visiblity / sum of keycount>
-        JavaDStream<Tuple2<Tuple2<String, Precipitation>, Tuple3<Double, Double, Double>>> avgWeatherStream =
+        JavaDStream<Tuple2<Tuple2<String, Precipitation>,
+                Tuple5<Double, Double, Double, Double, Double>>> avgWeatherStream =
                 weathersumStream
                 .map(x -> new Tuple2(x._1, avgWeatherDataFunc(x._2)));
 
@@ -238,14 +252,22 @@ public class StreamDataConsumer {
         //Now since weather updates happen per window it makes sense for sensor also
         //to broadcast weather update for duration of a window
         avgWeatherStream.foreachRDD((rdd) -> {
-            List<Tuple2<Tuple2<String, Precipitation>, Tuple3<Double, Double, Double>>>
+            List<Tuple2<Tuple2<String, Precipitation>, Tuple5<Double, Double, Double, Double, Double>>>
                     avgWeatherRecord = rdd.collect();
 
-            for (Tuple2<Tuple2<String, Precipitation>, Tuple3<Double, Double, Double>>
+            for (Tuple2<Tuple2<String, Precipitation>, Tuple5<Double, Double, Double, Double, Double>>
                     record : avgWeatherRecord) {
+                //Get the key which is <sensorId, Precipitation>
                 Tuple2<String, Precipitation> key = record._1;
-                Tuple3<Double, Double, Double> value = record._2;
-                sendWeatherNotification(properties, key._2, value._1(), value._2(), value._3());
+                //Get the value which is <lat, long, avg temp, avg wind speed, avg visibility>
+                Tuple5<Double, Double, Double, Double, Double> value = record._2;
+                sendWeatherNotification(properties,
+                        key._2,
+                        value._1(),
+                        value._2(),
+                        value._3(),
+                        value._4(),
+                        value._5());
             }
         });
 
@@ -254,6 +276,10 @@ public class StreamDataConsumer {
 
     }
 
+    /*
+    * This function is the start point of the Spark Application that consumes and analyzes weather and
+    * car data.
+     */
     public void consume() {
         Properties properties = PropertyFileReader.readConsumerPropertyFile();
         Properties prodProperties = PropertyFileReader.readProducerPropertyFile();
@@ -301,10 +327,10 @@ public class StreamDataConsumer {
                 weatherTopicSet
         );
 
+        LOGGER.info("Started weather stream processing...");
         JavaDStream<WeatherData> nonFilteredWeatherDataStream = weatherKafkaStream.map(tuple -> tuple._2());
         aggregateWeatherData(prodProperties, nonFilteredWeatherDataStream);
         //produceCarNotifications(nonFilteredDataStream, prodProperties);
-        //nonFilteredDataStream.print();
 
         javaStreamingContext.start();
         try {
