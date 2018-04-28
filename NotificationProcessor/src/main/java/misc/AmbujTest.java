@@ -1,6 +1,7 @@
 package misc;
 
 import datamodel.WeatherNotificationData;
+import processor.ClientHandler;
 import processor.NotificationHandler;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -11,8 +12,8 @@ import java.util.List;
 
 public class AmbujTest {
     private static final int PORT = 9007;
-    private static final List<Socket> socketList =
-            Collections.synchronizedList(new ArrayList<Socket>());
+    private static final List<ClientHandler> socketList =
+            Collections.synchronizedList(new ArrayList<ClientHandler>());
 
     public static void main(String... args) {
         // create a thread to accept incoming client connections.
@@ -23,7 +24,7 @@ public class AmbujTest {
                     System.out.printf("\nJAVA server started \n");
                     while(true) {
                         Socket clientSocket = serverSocket.accept();
-                        socketList.add(clientSocket);
+                        socketList.add(new ClientHandler(clientSocket));
                         System.out.println(clientSocket.getInetAddress().getHostName() + " connected");
                     }
                 } catch (IOException e) {
@@ -54,12 +55,17 @@ public class AmbujTest {
                                         String.format("%s%s", "Chilly Weather-", counter++)));
                     }
                     synchronized (socketList) {
-                        for(Socket clientSocket : socketList) {
+                        for(ClientHandler clientSocket : socketList) {
                             System.out.printf("\nCreating a new thread for each client to handle weather events");
                             NotificationHandler notificationHandler = new NotificationHandler(
                                     clientSocket, weatherNotificationDataList, 44.97, 93.26);
                             notificationHandler.run();
                         }
+                    }
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
             }

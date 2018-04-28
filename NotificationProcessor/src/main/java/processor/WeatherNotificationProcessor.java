@@ -22,8 +22,8 @@ import java.util.*;
 public class WeatherNotificationProcessor {
     private static final Logger LOGGER = Logger.getLogger(WeatherNotificationProcessor.class);
     private static final int PORT = 9007;
-    private static final List<Socket> socketList =
-            Collections.synchronizedList(new ArrayList<Socket>());
+    private static final List<ClientHandler> socketList =
+            Collections.synchronizedList(new ArrayList<ClientHandler>());
     private static final Properties consumerProps = new Properties();
 
     private Properties properties;
@@ -42,7 +42,7 @@ public class WeatherNotificationProcessor {
                     ServerSocket serverSocket = new ServerSocket(PORT);
                     while(true) {
                         Socket clientSocket = serverSocket.accept();
-                        socketList.add(clientSocket);
+                        socketList.add(new ClientHandler(clientSocket));
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -65,9 +65,9 @@ public class WeatherNotificationProcessor {
                         weatherNotificationDataList.add(weatherNotificationData);
                     }
                     synchronized (socketList) {
-                        for(Socket clientSocket : socketList) {
+                        for(ClientHandler clientHandler : socketList) {
                             NotificationHandler notificationHandler = new NotificationHandler(
-                                    clientSocket, weatherNotificationDataList, latitude, longitude);
+                                    clientHandler, weatherNotificationDataList, latitude, longitude);
                             notificationHandler.run();
                         }
                     }

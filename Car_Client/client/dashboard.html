@@ -6,26 +6,28 @@
 	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 	    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+      <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 	    <link rel="stylesheet" type="text/css" href="client/css/style.css">
 	    <title>Car Dashboard</title>
-      <script src="/socket.io/socket.io.js"></script>
-      <script>
-        var socket = io();
-      </script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
   </head>
 
   <body>
    		<div class="jumbotron" style="background: DarkSeaGreen !important">
         <h1>Weather Alerts:</h1>
 
-        <br/>
-        <br/>
-        <br/>
-        <p><b>Express</b> which is a Node.js web application framework.</p>
-        <br/>
-        <br/>
-        <br/>
-
+        <div id="live"></div>
       </div>
+      <script>
+          console.log("Came to scipt");
+          var socket = io();
+          socket.emit('dashboard_on');
+
+          socket.on('alert', function(data) {
+            // var message = data.alertEvent;
+            console.log("message= ", data);
+            document.getElementById("live").innerHTML = data;
+          });
+      </script>
   </body>
 </html>

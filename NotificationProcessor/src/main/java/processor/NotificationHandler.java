@@ -2,48 +2,38 @@ package processor;
 
 import datamodel.WeatherNotificationData;
 import lombok.AllArgsConstructor;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.List;
 
 @AllArgsConstructor
 public class NotificationHandler {
-    // private static PrintStream printStream;
     private static PrintWriter printWriter;
     private static final double THRESHOLD = 1000.0;
 
-    private Socket clientSocket;
+    private ClientHandler clientSocket;
     private List<WeatherNotificationData> weatherNotificationDataList;
     private double latitude;
     private double longitude;
 
     public void run() {
-        try {
-            // printStream = new PrintStream(clientSocket.getOutputStream());
-            printWriter = new PrintWriter(clientSocket.getOutputStream());
-            for(WeatherNotificationData weatherNotificationData : weatherNotificationDataList) {
-                // get the lat and long from alert event
-                double notificationLatitude = weatherNotificationData.getLatitude();
-                double notificationLongitude = weatherNotificationData.getLongitude();
+        printWriter = clientSocket.printWriter;
+        for(WeatherNotificationData weatherNotificationData : weatherNotificationDataList) {
+            // get the lat and long from alert event
+            double notificationLatitude = weatherNotificationData.getLatitude();
+            double notificationLongitude = weatherNotificationData.getLongitude();
 
-                // check whether lat and long are in a particular radius of this sensor
-                double dist =
-                        distance(notificationLatitude, latitude, notificationLongitude, longitude, 0.0, 0.0);
+            // check whether lat and long are in a particular radius of this sensor
+            double dist =
+                    distance(notificationLatitude, latitude, notificationLongitude, longitude, 0.0, 0.0);
 
-                if(dist < THRESHOLD) {
-                    // send notification
-                    // printStream.print(weatherNotificationData.getWeatherAlert());
-                    System.out.printf("\nSending data to client: %s", weatherNotificationData.getWeatherAlert());
-                    printWriter.println(weatherNotificationData.getWeatherAlert());
-                }
+            if(dist < THRESHOLD) {
+                // send notification
+                System.out.printf("\nSending data to client: %s: %s", clientSocket.client.getInetAddress().getHostName(),
+                        weatherNotificationData.getWeatherAlert());
+                printWriter.println(weatherNotificationData.getWeatherAlert());
+                printWriter.flush();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        // printStream.close();
-        printWriter.close();
     }
 
     /**
