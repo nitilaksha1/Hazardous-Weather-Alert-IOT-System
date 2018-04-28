@@ -3,7 +3,6 @@ package datamodel;
 import lombok.*;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -11,11 +10,13 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @ToString
-public class WeatherNotificationData implements Serializable {
+public class WindowedWeatherData implements Serializable{
+    private UUID key;
+    private String sensorid;
     private Double latitude;
     private Double longitude;
+    private Long timestamp;
     private Double temperature;
     private Double windspeed;
     private Double visibility;
-    private String weatherAlert;
 }
