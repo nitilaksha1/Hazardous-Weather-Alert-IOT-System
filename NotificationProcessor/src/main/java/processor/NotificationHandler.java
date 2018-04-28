@@ -4,12 +4,14 @@ import datamodel.WeatherNotificationData;
 import lombok.AllArgsConstructor;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
 
 @AllArgsConstructor
-public class NotificationHandler implements Runnable {
-    private static PrintStream printStream;
+public class NotificationHandler {
+    // private static PrintStream printStream;
+    private static PrintWriter printWriter;
     private static final double THRESHOLD = 1000.0;
 
     private Socket clientSocket;
@@ -19,7 +21,8 @@ public class NotificationHandler implements Runnable {
 
     public void run() {
         try {
-            printStream = new PrintStream(clientSocket.getOutputStream());
+            // printStream = new PrintStream(clientSocket.getOutputStream());
+            printWriter = new PrintWriter(clientSocket.getOutputStream());
             for(WeatherNotificationData weatherNotificationData : weatherNotificationDataList) {
                 // get the lat and long from alert event
                 double notificationLatitude = weatherNotificationData.getLatitude();
@@ -31,13 +34,16 @@ public class NotificationHandler implements Runnable {
 
                 if(dist < THRESHOLD) {
                     // send notification
-                    printStream.print(weatherNotificationData.getWeatherAlert());
+                    // printStream.print(weatherNotificationData.getWeatherAlert());
+                    System.out.printf("\nSending data to client: %s", weatherNotificationData.getWeatherAlert());
+                    printWriter.println(weatherNotificationData.getWeatherAlert());
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        printStream.close();
+        // printStream.close();
+        printWriter.close();
     }
 
     /**

@@ -35,7 +35,7 @@ public class WeatherNotificationProcessor {
         final Consumer consumer = new KafkaConsumer<String, WeatherNotificationData>(consumerProps);
         consumer.subscribe(Arrays.asList(properties.getProperty("com.iot.app.kafka.topic")));
 
-        // create a thread to accept incoming connections.
+        // create a thread to accept incoming client connections.
         Thread connectionThread = new Thread() {
             public void run() {
                 try {
@@ -68,8 +68,7 @@ public class WeatherNotificationProcessor {
                         for(Socket clientSocket : socketList) {
                             NotificationHandler notificationHandler = new NotificationHandler(
                                     clientSocket, weatherNotificationDataList, latitude, longitude);
-                            Thread notificationThread = new Thread(notificationHandler);
-                            notificationThread.start();
+                            notificationHandler.run();
                         }
                     }
                 }
