@@ -54,17 +54,11 @@ public class StreamDataConsumer {
         JavaDStream<Tuple2<String, Tuple2<Double, Integer>>> carspeedcountPair =
                 carspeedPair.map(x -> new Tuple2(x._1, new Tuple2<>(x._2, 1)));
 
-        JavaDStream<Tuple2<String, Tuple2<Double, Integer>>> speedsumStream =
-                carspeedcountPair.reduce((x,y) -> carmapFunc(x,y));
-
         JavaDStream<Tuple2<String, Tuple2<Double, Integer>>> speedsumStream2 =
                 carspeedcountPair.reduceByWindow(
                         (x,y) -> carmapFunc(x,y),
                         Durations.seconds(15),
                         Durations.seconds(15));
-
-        JavaDStream<Tuple2<String, Double>> avgStream = speedsumStream
-                .map(x -> new Tuple2(x._1, x._2._1/x._2._2));
 
         JavaDStream<Tuple2<String, Double>> avgStream2 = speedsumStream2
                 .map(x -> new Tuple2(x._1, x._2._1/x._2._2));
