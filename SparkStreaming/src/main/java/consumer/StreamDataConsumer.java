@@ -1,5 +1,6 @@
 package consumer;
 
+import com.datastax.spark.connector.cql.CassandraConnector;
 import datamodel.*;
 import decoder.CarDataDecoder;
 import decoder.WeatherDataDecoder;
@@ -7,6 +8,8 @@ import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import kafka.serializer.StringDecoder;
+
+import org.apache.avro.ipc.specific.Person;
 import org.apache.avro.mapred.Pair;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
@@ -17,12 +20,18 @@ import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
+import com.datastax.spark.connector.japi.CassandraJavaUtil;
+import org.apache.spark.sql.catalyst.*;
 import scala.*;
 import utils.reader.PropertyFileReader;
 
 import java.lang.Double;
+import java.lang.Long;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.function.Function;
+
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 public class StreamDataConsumer {
     private static final Logger LOGGER = Logger.getLogger(StreamDataConsumer.class);
@@ -54,22 +63,29 @@ public class StreamDataConsumer {
         JavaDStream<Tuple2<String, Tuple2<Double, Integer>>> carspeedcountPair =
                 carspeedPair.map(x -> new Tuple2(x._1, new Tuple2<>(x._2, 1)));
 
-        JavaDStream<Tuple2<String, Tuple2<Double, Integer>>> speedsumStream =
-                carspeedcountPair.reduce((x,y) -> carmapFunc(x,y));
-
         JavaDStream<Tuple2<String, Tuple2<Double, Integer>>> speedsumStream2 =
                 carspeedcountPair.reduceByWindow(
                         (x,y) -> carmapFunc(x,y),
                         Durations.seconds(15),
                         Durations.seconds(15));
 
-        JavaDStream<Tuple2<String, Double>> avgStream = speedsumStream
-                .map(x -> new Tuple2(x._1, x._2._1/x._2._2));
-
         JavaDStream<Tuple2<String, Double>> avgStream2 = speedsumStream2
                 .map(x -> new Tuple2(x._1, x._2._1/x._2._2));
 
-        avgStream2.print();
+        JavaDStream<CarNotificationData> notificationStream = avgStream2
+                .map(x-> new CarNotificationData(UUID.randomUUID(), x._1, x._2));
+
+        //Save car data to cassandra
+
+        notificationStream.foreachRDD(rdd -> {
+            CassandraJavaUtil.javaFunctions(rdd)
+                    .writerBuilder("car", "car_data",
+                            mapToRow(CarNotificationData.class))
+                    .saveToCassandra();
+
+        });
+
+        notificationStream.print();
     }
 
     //WEATHER DATA AGGREGATION FUNCTIONS
@@ -163,7 +179,7 @@ public class StreamDataConsumer {
         String topic = properties.getProperty("com.iot.app.kafka.weather.topic");
         Random random = new Random();
 
-        WeatherNotificationData weatherNotificationData= new WeatherNotificationData(latitude,
+        WeatherNotificationData weatherNotificationData= new WeatherNotificationData(null, latitude,
                 longitude, temperature, windSpeed, visibility, weatherAlert);
 
         KeyedMessage<String, WeatherNotificationData> keyedMessage = new KeyedMessage<>(topic,
@@ -248,6 +264,18 @@ public class StreamDataConsumer {
                 weathersumStream
                 .map(x -> new Tuple2(x._1, avgWeatherDataFunc(x._2)));
 
+
+        /*avgWeatherStream.map(x -> )
+        notificationStream.foreachRDD(rdd -> {
+
+
+            CassandraJavaUtil.javaFunctions(rdd)
+                    .writerBuilder("weather", "weather_data",
+                            mapToRow(WeatherData.class))
+                    .saveToCassandra();
+
+        });*/
+
         //Analyze each windowed record and send weather notification to sensor
         //Now since weather updates happen per window it makes sense for sensor also
         //to broadcast weather update for duration of a window
@@ -261,6 +289,7 @@ public class StreamDataConsumer {
                 Tuple2<String, Precipitation> key = record._1;
                 //Get the value which is <lat, long, avg temp, avg wind speed, avg visibility>
                 Tuple5<Double, Double, Double, Double, Double> value = record._2;
+
                 sendWeatherNotification(properties,
                         key._2,
                         value._1(),
@@ -270,6 +299,7 @@ public class StreamDataConsumer {
                         value._5());
             }
         });
+
 
         //Print average weather statistics for each sensorId
         avgWeatherStream.print();
@@ -286,7 +316,8 @@ public class StreamDataConsumer {
         SparkConf sparkConf = new SparkConf()
                 .setAppName(properties.getProperty("com.iot.app.spark.app.name"))
                 .setMaster(properties.getProperty("com.iot.app.spark.master"))
-                .set("spark.streaming.concurrentJobs", "4");
+                .set("spark.streaming.concurrentJobs", "4")
+                .set("spark.cassandra.connection.host", "localhost");
 
         JavaStreamingContext javaStreamingContext = new JavaStreamingContext(sparkConf, Durations.seconds(5));
         javaStreamingContext.checkpoint(properties.getProperty("com.iot.app.spark.checkpoint.dir"));
@@ -313,7 +344,7 @@ public class StreamDataConsumer {
         JavaDStream<CarData> nonFilteredCarDataStream = carKafkaStream.map(tuple -> tuple._2());
         aggregateCarData(nonFilteredCarDataStream);
 
-        String weatherTopic = properties.getProperty("com.iot.app.kafka.weather.topic");
+        /*String weatherTopic = properties.getProperty("com.iot.app.kafka.weather.topic");
         Set<String> weatherTopicSet = new HashSet<String>();
         weatherTopicSet.add(weatherTopic);
 
@@ -331,7 +362,7 @@ public class StreamDataConsumer {
         JavaDStream<WeatherData> nonFilteredWeatherDataStream = weatherKafkaStream.map(tuple -> tuple._2());
         aggregateWeatherData(prodProperties, nonFilteredWeatherDataStream);
         //produceCarNotifications(nonFilteredDataStream, prodProperties);
-
+        */
         javaStreamingContext.start();
         try {
             javaStreamingContext.awaitTermination();
@@ -341,6 +372,7 @@ public class StreamDataConsumer {
     }
 
     private void produceCarNotifications(JavaDStream<CarData> dStream, Properties properties) {
+
         dStream.foreachRDD(
                 rdd -> {
                     for (CarData carData : rdd.collect()) {
@@ -357,7 +389,7 @@ public class StreamDataConsumer {
                         String topic = properties.getProperty("com.iot.app.kafka.car.topic");
                         Random random = new Random();
 
-                        CarNotificationData carNotificationData = new CarNotificationData(carData.getCarId(),
+                        CarNotificationData carNotificationData = new CarNotificationData(null, carData.getCarId(),
                                 carData.getSpeed());
 
                         KeyedMessage<String, CarNotificationData> keyedMessage = new KeyedMessage<>(topic,

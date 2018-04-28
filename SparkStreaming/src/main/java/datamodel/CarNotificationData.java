@@ -3,6 +3,7 @@ package datamodel;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
@@ -10,6 +11,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @ToString
 public class CarNotificationData implements Serializable {
-    private String carId;
-    private double speed;
+    private UUID key;
+    private String carid;
+    private Double speed;
 }
