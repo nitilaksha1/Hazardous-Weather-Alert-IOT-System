@@ -179,7 +179,7 @@ public class StreamDataConsumer {
         String topic = properties.getProperty("com.iot.app.kafka.weather.topic");
         Random random = new Random();
 
-        WeatherNotificationData weatherNotificationData= new WeatherNotificationData(null, latitude,
+        WeatherNotificationData weatherNotificationData= new WeatherNotificationData(latitude,
                 longitude, temperature, windSpeed, visibility, weatherAlert);
 
         KeyedMessage<String, WeatherNotificationData> keyedMessage = new KeyedMessage<>(topic,
@@ -265,16 +265,25 @@ public class StreamDataConsumer {
                 .map(x -> new Tuple2(x._1, avgWeatherDataFunc(x._2)));
 
 
-        /*avgWeatherStream.map(x -> )
-        notificationStream.foreachRDD(rdd -> {
+        Long ts = System.currentTimeMillis();
 
+        //Persisting windowed weather data to Cassandra DB
+        JavaDStream<WindowedWeatherData> cassandraStream = avgWeatherStream
+                .map(x -> new WindowedWeatherData(UUID.randomUUID(),
+                        x._1._1,
+                        x._2._1(),
+                        x._2._2(),
+                        ts,
+                        x._2._3(),
+                        x._2._4(),
+                        x._2._5()));
 
+        cassandraStream.foreachRDD(rdd -> {
             CassandraJavaUtil.javaFunctions(rdd)
                     .writerBuilder("weather", "weather_data",
-                            mapToRow(WeatherData.class))
-                    .saveToCassandra();
-
-        });*/
+                            mapToRow(WindowedWeatherData.class))
+            .saveToCassandra();
+        });
 
         //Analyze each windowed record and send weather notification to sensor
         //Now since weather updates happen per window it makes sense for sensor also
@@ -344,7 +353,7 @@ public class StreamDataConsumer {
         JavaDStream<CarData> nonFilteredCarDataStream = carKafkaStream.map(tuple -> tuple._2());
         aggregateCarData(nonFilteredCarDataStream);
 
-        /*String weatherTopic = properties.getProperty("com.iot.app.kafka.weather.topic");
+        String weatherTopic = properties.getProperty("com.iot.app.kafka.weather.topic");
         Set<String> weatherTopicSet = new HashSet<String>();
         weatherTopicSet.add(weatherTopic);
 
@@ -362,7 +371,7 @@ public class StreamDataConsumer {
         JavaDStream<WeatherData> nonFilteredWeatherDataStream = weatherKafkaStream.map(tuple -> tuple._2());
         aggregateWeatherData(prodProperties, nonFilteredWeatherDataStream);
         //produceCarNotifications(nonFilteredDataStream, prodProperties);
-        */
+
         javaStreamingContext.start();
         try {
             javaStreamingContext.awaitTermination();

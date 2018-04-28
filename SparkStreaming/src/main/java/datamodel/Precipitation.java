@@ -1,6 +1,8 @@
 package datamodel;
 
-public enum Precipitation {
+import java.io.Serializable;
+
+public enum Precipitation implements Serializable{
     RAIN,
     SNOW,
     HAIL,

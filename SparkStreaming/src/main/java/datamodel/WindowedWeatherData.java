@@ -1,20 +1,22 @@
 package datamodel;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
 import java.io.Serializable;
 import java.util.UUID;
 
-public class WindowedWeatherData {
+@AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@ToString
+public class WindowedWeatherData implements Serializable{
     private UUID key;
-    private String sensorId;
-    private double latitude;
-    private double longitude;
+    private String sensorid;
+    private Double latitude;
+    private Double longitude;
     private Long timestamp;
-    private double temperature;
-    private Precipitation preciptation;
-    private double windSpeed;
-    private double visibility;
+    private Double temperature;
+    private Double windspeed;
+    private Double visibility;
 }
