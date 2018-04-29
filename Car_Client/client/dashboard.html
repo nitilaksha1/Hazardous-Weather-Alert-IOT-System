@@ -1,33 +1,48 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    	<meta charset="utf-8">
-    	<meta name="viewport" content="width=device-width, initial-scale=1">
-	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-	    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-      <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
-	    <link rel="stylesheet" type="text/css" href="client/css/style.css">
-	    <title>Car Dashboard</title>
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-  </head>
+<!DOCTYPE html>
+<html>
 
-  <body>
-   		<div class="jumbotron" style="background: DarkSeaGreen !important">
-        <h1>Weather Alerts:</h1>
+<head>
+    <title>Car Dashboard</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/jquery.validate.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <link rel="stylesheet" type="text/css" href="/client/css/dashboard.css">
+    <script type="text/javascript" src="/client/js/dashboard.js"></script>
+</head>
 
-        <div id="live"></div>
-      </div>
-      <script>
-          console.log("Came to scipt");
-          var socket = io();
-          socket.emit('dashboard_on');
+<body>
+    <div class="jumbotron" style="background: DarkSeaGreen !important">
+        <h3 style="text-align: center; font-weight: bold" id="live"></h3>
+        <div class="table">
+            <div class="table-cell">
+                <div id="main">
+                    <div id="screen">
+                        <div id="home">
+                            <div id="radial">
+                                <div id="empty"></div>
+                            </div>
+                            <div id="icon">
+                                <img src="http://i1204.photobucket.com/albums/bb409/david_barukcic/battery_icon_zpst5bk33aq.png"/>
+                            </div>
+                            <div id="status">15%</div>
+                            <h1 id="countdown">0</h1>
+                            <div id="mph">mph</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+      console.log("Came to scipt");
+      var socket = io();
+      socket.emit('dashboard_on');
 
-          socket.on('alert', function(data) {
-            // var message = data.alertEvent;
-            console.log("message= ", data);
-            document.getElementById("live").innerHTML = data;
-          });
-      </script>
-  </body>
+      socket.on('alert', function(data) {
+        document.getElementById("live").innerHTML = data;
+      });
+    </script>
+</body>
 </html>

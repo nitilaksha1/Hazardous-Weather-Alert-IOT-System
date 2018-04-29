@@ -28,3 +28,5 @@ io.sockets.on('connection', function(socket) {
 		});
   	});
 });
+
+app.use('/client', express.static(__dirname + '/client'));
