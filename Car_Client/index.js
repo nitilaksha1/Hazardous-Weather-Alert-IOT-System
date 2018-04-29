@@ -6,7 +6,7 @@ app.get('/',function(req, res) {
     res.sendFile(__dirname + '/client/dashboard.html');
 });
 
-serv.listen(2000);
+serv.listen(3500);
 
 var io = require('socket.io')(serv,{});
 

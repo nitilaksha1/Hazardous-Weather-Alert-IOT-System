@@ -2,6 +2,8 @@ package decoder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datamodel.WeatherNotificationData;
+import org.apache.kafka.common.serialization.Deserializer;
+
 import java.util.Map;
 
 /**
@@ -9,7 +11,7 @@ import java.util.Map;
  * @author ambuj, niti
  * @version 1.0
  */
-public class WeatherNotificationDataDeserializer {
+public class WeatherNotificationDataDeserializer implements Deserializer<WeatherNotificationData> {
     public void close() {
     }
 

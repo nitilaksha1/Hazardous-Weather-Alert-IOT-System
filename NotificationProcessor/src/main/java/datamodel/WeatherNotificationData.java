@@ -17,7 +17,7 @@ public class WeatherNotificationData implements Serializable {
     private Double latitude;
     private Double longitude;
     private Double temperature;
-    private Double windSpeed;
+    private Double windspeed;
     private Double visibility;
     private String weatherAlert;
 }
