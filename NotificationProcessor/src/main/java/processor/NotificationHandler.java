@@ -26,11 +26,12 @@ public class NotificationHandler {
             double dist =
                     distance(notificationLatitude, latitude, notificationLongitude, longitude, 0.0, 0.0);
 
-            if(dist < THRESHOLD) {
+            //if(dist < THRESHOLD) {
+            if (true) {
                 // send notification
                 System.out.printf("\nSending data to client: %s: %s", clientSocket.client.getInetAddress().getHostName(),
                         weatherNotificationData.getWeatherAlert());
-                printWriter.println(weatherNotificationData.getWeatherAlert());
+                printWriter.println(weatherNotificationData);
                 printWriter.flush();
             }
         }
