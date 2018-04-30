@@ -26,15 +26,17 @@ public class WeatherNotificationProcessor {
     private static final List<ClientHandler> socketList =
             Collections.synchronizedList(new ArrayList<ClientHandler>());
     private static final Properties consumerProps = new Properties();
+    private static final Properties carProps = new Properties();
 
     private Properties properties;
     private double latitude;
     private double longitude;
 
     public void processNotificationEvent() {
-        setupConsumerProperties();
+        setupConsumerPropertiesV1();
+        setupConsumerPropertiesV2();
         final Consumer weatherConsumer = new KafkaConsumer<String, WeatherNotificationData>(consumerProps);
-        final Consumer carConsumer = new KafkaConsumer<String, WeatherNotificationData>(consumerProps);
+        final Consumer carConsumer = new KafkaConsumer<String, WeatherNotificationData>(carProps);
         weatherConsumer.subscribe(Arrays.asList(properties.getProperty("com.iot.app.kafka.topic-1")));
         carConsumer.subscribe(Arrays.asList(properties.getProperty("com.iot.app.kafka.topic-2")));
 
@@ -108,7 +110,7 @@ public class WeatherNotificationProcessor {
         carThread.start();
     }
 
-    private void setupConsumerProperties() {
+    private void setupConsumerPropertiesV1() {
         consumerProps.put("bootstrap.servers", properties.getProperty("com.iot.app.kafka.brokerlist"));
         consumerProps.put("group.id", properties.getProperty("com.iot.app.kafka.consumer.groupid"));
         consumerProps.put("enable.auto.commit", "true");
@@ -119,6 +121,19 @@ public class WeatherNotificationProcessor {
         consumerProps.put("value.deserializer", "decoder.WeatherNotificationDataDeserializer");
         consumerProps.put("deserializer.class", "decoder.WeatherNotificationDataDecoder");
         consumerProps.put("auto.offset.reset", "earliest");
+    }
+
+    private void setupConsumerPropertiesV2() {
+        carProps.put("bootstrap.servers", properties.getProperty("com.iot.app.kafka.brokerlist"));
+        carProps.put("group.id", properties.getProperty("com.iot.app.kafka.consumer.groupid"));
+        carProps.put("enable.auto.commit", "true");
+        carProps.put("auto.offset.reset", "earliest");
+        carProps.put("auto.commit.interval.ms", "1000");
+        carProps.put("session.timeout.ms", "30000");
+        carProps.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        carProps.put("value.deserializer", "decoder.CarNotificationDataDeserializer");
+        carProps.put("deserializer.class", "decoder.CarNotificationDataDecoder");
+        carProps.put("auto.offset.reset", "earliest");
     }
 }
 
