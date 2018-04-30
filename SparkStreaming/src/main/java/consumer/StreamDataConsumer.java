@@ -268,8 +268,8 @@ public class StreamDataConsumer {
                 Tuple6<Double, Double, Double, Double, Double, Integer>>>
                 weathersumStream = weatherDataPair.reduceByWindow(
                         (x,y) -> weatherFunc(x,y),
-                        Durations.seconds(15),
-                        Durations.seconds(15));
+                        Durations.seconds(5),
+                        Durations.seconds(5));
 
         //Convert <<sensorId, Precipitation> -> <sum of temperatures, sum of windspeeds, sum of visiblity, sum of keycounts>
         //TO

@@ -44,9 +44,9 @@ public class CarDataProducer {
 
                 for(int j = 0; j < 9; j++) {
                     CarData carData = new CarData("car",
-                            carIds[random.nextInt(4)],
-                            latArr[i],
-                            longArr[i],
+                            j + "",
+                            latArr[j],
+                            longArr[j],
                             new DateTime().getMillis(),
                             speed,
                             fuelLevel);
