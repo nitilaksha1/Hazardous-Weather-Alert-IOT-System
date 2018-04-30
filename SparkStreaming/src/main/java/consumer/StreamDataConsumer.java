@@ -58,7 +58,7 @@ public class StreamDataConsumer {
      */
     private void aggregateCarData(JavaDStream<CarData> carDataStream) {
         JavaPairDStream<String, Double> carspeedPair= carDataStream.mapToPair((t) ->
-                new Tuple2(t.getCarId(), t.getSpeed()));
+                new Tuple2(t.getUuid(), t.getSpeed()));
 
         JavaDStream<Tuple2<String, Tuple2<Double, Integer>>> carspeedcountPair =
                 carspeedPair.map(x -> new Tuple2(x._1, new Tuple2<>(x._2, 1)));
@@ -162,9 +162,14 @@ public class StreamDataConsumer {
      * long the sensor will decide if the update is relevant to it (based on distance). If the update is
      * relevant the sensor will send update to all cars connected to it
      */
-    private static void produceWeatherHazardAlert(Properties properties, Double latitude,
-                                                  Double longitude, Double temperature,
-                                                  Double windSpeed, Double visibility,
+    private static void produceWeatherHazardAlert(Properties properties,
+                                                  String type,
+                                                  String sensorId,
+                                                  Double latitude,
+                                                  Double longitude,
+                                                  Double temperature,
+                                                  Double windSpeed,
+                                                  Double visibility,
                                                   String weatherAlert) {
         Properties producerProperties = new Properties();
         producerProperties.put("zookeeper.connect",
@@ -179,7 +184,7 @@ public class StreamDataConsumer {
         String topic = properties.getProperty("com.iot.app.kafka.weather.topic");
         Random random = new Random();
 
-        WeatherNotificationData weatherNotificationData= new WeatherNotificationData(latitude,
+        WeatherNotificationData weatherNotificationData= new WeatherNotificationData(type, sensorId, latitude,
                 longitude, temperature, windSpeed, visibility, weatherAlert);
 
         KeyedMessage<String, WeatherNotificationData> keyedMessage = new KeyedMessage<>(topic,
@@ -187,12 +192,20 @@ public class StreamDataConsumer {
         producer.send(keyedMessage);
     }
 
-    private static void sendWeatherNotification(Properties properties, Precipitation precp, Double latitude,
-                                                Double longitude, Double temperature, Double windSpeed,
+    private static void sendWeatherNotification(Properties properties,
+                                                String type,
+                                                String sensorId,
+                                                Precipitation precp,
+                                                Double latitude,
+                                                Double longitude,
+                                                Double temperature,
+                                                Double windSpeed,
                                                 Double visibility) {
         if (isBlizzardWeather(precp, temperature, windSpeed, visibility)) {
             //Send notification to sensor
             produceWeatherHazardAlert(properties,
+                    type,
+                    sensorId,
                     latitude,
                     longitude,
                     temperature,
@@ -204,6 +217,8 @@ public class StreamDataConsumer {
         else if (isFogWeather(precp, visibility)) {
             //Send notification to sensor
             produceWeatherHazardAlert(properties,
+                    type,
+                    sensorId,
                     latitude,
                     longitude,
                     temperature,
@@ -214,6 +229,8 @@ public class StreamDataConsumer {
         else if (isWindyWeather(precp, windSpeed)) {
             //Send notification to sensor
             produceWeatherHazardAlert(properties,
+                    type,
+                    sensorId,
                     latitude,
                     longitude,
                     temperature,
@@ -300,6 +317,8 @@ public class StreamDataConsumer {
                 Tuple5<Double, Double, Double, Double, Double> value = record._2;
 
                 sendWeatherNotification(properties,
+                        "weather",
+                        key._1,
                         key._2,
                         value._1(),
                         value._2(),
@@ -398,7 +417,7 @@ public class StreamDataConsumer {
                         String topic = properties.getProperty("com.iot.app.kafka.car.topic");
                         Random random = new Random();
 
-                        CarNotificationData carNotificationData = new CarNotificationData(null, carData.getCarId(),
+                        CarNotificationData carNotificationData = new CarNotificationData(null, carData.getUuid(),
                                 carData.getSpeed());
 
                         KeyedMessage<String, CarNotificationData> keyedMessage = new KeyedMessage<>(topic,

@@ -1,6 +1,7 @@
 package misc;
 
 import datamodel.WeatherNotificationData;
+import org.joda.time.DateTime;
 import processor.ClientHandler;
 import processor.NotificationHandler;
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class AmbujTest {
+public class CarTest {
     private static final int PORT = 9007;
     private static final List<ClientHandler> socketList =
             Collections.synchronizedList(new ArrayList<ClientHandler>());
@@ -45,16 +46,29 @@ public class AmbujTest {
 
                     for(int i = 0; i < 5; i++) {
                         System.out.printf("\nGenerating weather events");
-                        weatherNotificationDataList.add(
-                                new WeatherNotificationData(
-                                        "weather",
-                                        "A",
-                                        44.97,
-                                        93.26,
-                                        11.0,
-                                        21.0,
-                                        1.0,
-                                        String.format("%s%s", "Chilly Weather-", counter++)));
+                        if(i < 3) {
+                            weatherNotificationDataList.add(
+                                    new WeatherNotificationData(
+                                            "weather",
+                                            "A",
+                                            44.9723,
+                                            -93.2625,
+                                            67.0,
+                                            11.0,
+                                            1.0,
+                                            String.format("%s%s", "Blizzard ", counter++)));
+                        } else {
+                            weatherNotificationDataList.add(
+                                    new WeatherNotificationData(
+                                            "weather",
+                                            "B",
+                                            44.9828,
+                                            -93.1539,
+                                            67.0,
+                                            15.0,
+                                            1.0,
+                                            String.format("%s%s", "Normal Weather ", counter++)));
+                        }
                     }
                     synchronized (socketList) {
                         for(ClientHandler clientSocket : socketList) {

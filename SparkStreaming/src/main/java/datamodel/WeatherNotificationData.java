@@ -12,6 +12,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @ToString
 public class WeatherNotificationData implements Serializable {
+    private String type;
+    private String sensorId;
     private Double latitude;
     private Double longitude;
     private Double temperature;

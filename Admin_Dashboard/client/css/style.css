@@ -1,0 +1,76 @@
+body {
+  padding: 20px;
+  background-color: #3A4A4D;
+}
+
+td {
+	background:#dcddc0 url('../img/cell-blue.jpg');
+	border-color: #999999;
+}
+
+img {
+    display: block;
+    margin: 0 auto;
+    width: 60%;
+}
+
+nav {
+  	background-image: -webkit-linear-gradient(150deg, #4CBFFF 35%, #34ADFF 35%);
+}
+
+.nav a {
+    color: white !important;
+    font-size: 1.4em !important;
+}
+
+.navbar-header a {
+	color: white !important;
+}
+
+.nav li {
+    padding-right:5px;
+}
+
+.customText {
+	text-align: center;
+	vertical-align: middle;
+}
+
+
+.customHeader {
+	font-weight: bold;
+}
+
+#map {
+  height: 480px;
+}
+
+#right-panel {
+  font-family: 'Roboto','sans-serif';
+  line-height: 30px;
+  padding-left: 10px;
+}
+
+#right-panel select, #right-panel input {
+  font-size: 15px;
+}
+
+#right-panel select {
+  width: 50%;
+}
+
+#right-panel i {
+  font-size: 12px;
+}
+
+#right-panel {
+  height: 390px;
+  float: right;
+  width: 390px;
+  overflow: auto;
+}
+
+#right-panel {
+  float: none;
+  width: auto;
+}

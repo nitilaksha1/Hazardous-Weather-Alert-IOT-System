@@ -5,8 +5,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ClientHandler {
-    protected Socket client;
-    protected PrintWriter printWriter;
+    public Socket client;
+    public PrintWriter printWriter;
 
     public ClientHandler(Socket client) {
         this.client = client;

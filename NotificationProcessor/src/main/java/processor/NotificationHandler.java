@@ -1,5 +1,7 @@
 package processor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import datamodel.WeatherNotificationData;
 import lombok.AllArgsConstructor;
 import java.io.PrintWriter;
@@ -17,6 +19,7 @@ public class NotificationHandler {
 
     public void run() {
         printWriter = clientSocket.printWriter;
+        ObjectMapper mapper = new ObjectMapper();
         for(WeatherNotificationData weatherNotificationData : weatherNotificationDataList) {
             // get the lat and long from alert event
             double notificationLatitude = weatherNotificationData.getLatitude();
@@ -28,11 +31,17 @@ public class NotificationHandler {
 
             //if(dist < THRESHOLD) {
             if (true) {
-                // send notification
-                System.out.printf("\nSending data to client: %s: %s", clientSocket.client.getInetAddress().getHostName(),
-                        weatherNotificationData.getWeatherAlert());
-                printWriter.println(weatherNotificationData);
-                printWriter.flush();
+                try {
+                    String weatherNotification = mapper.writeValueAsString(weatherNotificationData);
+                    // send notification
+                    System.out.printf("\nSending data to client: %s: %s",
+                            clientSocket.client.getInetAddress().getHostName(),
+                            weatherNotification);
+                    printWriter.println(weatherNotification);
+                    printWriter.flush();
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

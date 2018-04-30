@@ -10,7 +10,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @ToString
 public class CarData implements Serializable {
-    private String carId;
+    private String type;
+    private String uuid;
     private String latitude;
     private String longitude;
     private Long timestamp;
