@@ -1,7 +1,9 @@
 package misc;
 
+import datamodel.CarData;
 import datamodel.WeatherNotificationData;
 import org.joda.time.DateTime;
+import processor.CarNotificationHandler;
 import processor.ClientHandler;
 import processor.NotificationHandler;
 import java.io.IOException;
@@ -118,7 +120,7 @@ public class NayanTest {
                         for(ClientHandler clientSocket : socketList) {
                             System.out.printf("\nCreating a new thread for each client to handle weather events");
                             CarNotificationHandler carNotificationHandler = new CarNotificationHandler(
-                                    clientSocket, carDataList, 44.97, 93.26);
+                                    clientSocket, carDataList);
                             carNotificationHandler.run();
                         }
                     }

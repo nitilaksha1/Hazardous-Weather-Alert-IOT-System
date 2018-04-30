@@ -1,4 +1,4 @@
-package misc;
+package datamodel;
 
 import lombok.*;
 import java.io.Serializable;
@@ -10,7 +10,7 @@ import java.io.Serializable;
 @ToString
 public class CarData implements Serializable {
     private String type;
-    private String sensorId;
+    private String uuid;
     private String latitude;
     private String longitude;
     private Long timestamp;

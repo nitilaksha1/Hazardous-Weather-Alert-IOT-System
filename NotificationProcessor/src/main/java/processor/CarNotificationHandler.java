@@ -1,21 +1,17 @@
-package misc;
+package processor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import datamodel.CarData;
 import lombok.AllArgsConstructor;
-import processor.ClientHandler;
 import java.io.PrintWriter;
 import java.util.List;
 
 @AllArgsConstructor
 public class CarNotificationHandler {
     private static PrintWriter printWriter;
-    private static final double THRESHOLD = 1000.0;
-
     private ClientHandler clientSocket;
     private List<CarData> carDataList;
-    private double latitude;
-    private double longitude;
 
     public void run() {
         printWriter = clientSocket.printWriter;

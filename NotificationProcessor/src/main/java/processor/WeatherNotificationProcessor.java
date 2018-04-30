@@ -1,6 +1,7 @@
 package processor;
 
 // http://makemobiapps.blogspot.com/p/multiple-client-server-chat-programming.html
+import datamodel.CarData;
 import datamodel.WeatherNotificationData;
 import lombok.AllArgsConstructor;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -32,8 +33,10 @@ public class WeatherNotificationProcessor {
 
     public void processNotificationEvent() {
         setupConsumerProperties();
-        final Consumer consumer = new KafkaConsumer<String, WeatherNotificationData>(consumerProps);
-        consumer.subscribe(Arrays.asList(properties.getProperty("com.iot.app.kafka.topic")));
+        final Consumer weatherConsumer = new KafkaConsumer<String, WeatherNotificationData>(consumerProps);
+        final Consumer carConsumer = new KafkaConsumer<String, WeatherNotificationData>(consumerProps);
+        weatherConsumer.subscribe(Arrays.asList(properties.getProperty("com.iot.app.kafka.topic-1")));
+        carConsumer.subscribe(Arrays.asList(properties.getProperty("com.iot.app.kafka.topic-2")));
 
         // create a thread to accept incoming client connections.
         Thread connectionThread = new Thread() {
@@ -55,7 +58,7 @@ public class WeatherNotificationProcessor {
             public void run() {
                 while (true) {
                     // do we need to set up poll timeout here?
-                    ConsumerRecords records = consumer.poll(0);
+                    ConsumerRecords records = weatherConsumer.poll(0);
                     List<WeatherNotificationData> weatherNotificationDataList =
                             new ArrayList<WeatherNotificationData>();
                     for (Object record : records) {
@@ -67,8 +70,33 @@ public class WeatherNotificationProcessor {
                     synchronized (socketList) {
                         for(ClientHandler clientHandler : socketList) {
                             NotificationHandler notificationHandler = new NotificationHandler(
-                                    clientHandler, weatherNotificationDataList, latitude, longitude);
+                                    clientHandler, weatherNotificationDataList, 44.97, -93.26);
                             notificationHandler.run();
+                        }
+                    }
+                }
+            }
+        };
+
+        // create a thread to read from kafka topic
+        Thread carThread = new Thread() {
+            public void run() {
+                while (true) {
+                    // do we need to set up poll timeout here?
+                    ConsumerRecords records = carConsumer.poll(0);
+                    List<CarData> carDataList =
+                            new ArrayList<CarData>();
+                    for (Object record : records) {
+                        ConsumerRecord consumerRecord = (ConsumerRecord) record;
+                        CarData carData =
+                                (CarData) consumerRecord.value();
+                        carDataList.add(carData);
+                    }
+                    synchronized (socketList) {
+                        for(ClientHandler clientSocket : socketList) {
+                            CarNotificationHandler carNotificationHandler = new CarNotificationHandler(
+                                    clientSocket, carDataList);
+                            carNotificationHandler.run();
                         }
                     }
                 }
@@ -77,6 +105,7 @@ public class WeatherNotificationProcessor {
 
         connectionThread.start();
         consumerThread.start();
+        carThread.start();
     }
 
     private void setupConsumerProperties() {
