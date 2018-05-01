@@ -54,11 +54,12 @@ public class CarDataProducer {
                 }
             }
             //Collections.shuffle(carDataList);
+            int i = 0;
             for(CarData carData : carDataList) {
-                KeyedMessage<String, CarData> keyedMessage = new KeyedMessage<String, CarData>(topic, carData);
+                KeyedMessage<String, CarData> keyedMessage = new KeyedMessage(topic, carData);
                 producer.send(keyedMessage);
                 try {
-                    Thread.sleep(1500);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

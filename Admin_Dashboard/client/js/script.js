@@ -105,7 +105,7 @@ function createMarkerV1(myLatLng, weatherAlert, temp, windspeed, visibility) {
 function createMarkerV3(myLatLng) {
   console.log("func: createMarkerV3()");
   var icon = {
-      url: '/client/img/car.png', // url
+      url: '/client/img/car2.png', // url
       scaledSize: new google.maps.Size(40, 40), // scaled size
       origin: new google.maps.Point(0,0), // origin
       anchor: new google.maps.Point(0, 0) // anchor

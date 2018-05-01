@@ -28,7 +28,7 @@ public class FogSimulator implements WeatherDataSimulator {
         LOGGER.info("Sending normal weather events ...");
 
         while(true) {
-            WeatherData weatherData = new WeatherData(UUID.randomUUID().toString(),
+            WeatherData weatherData = new WeatherData("weather-station-fog",
                     latitude,
                     longitude,
                     new DateTime().getMillis(),
@@ -39,11 +39,11 @@ public class FogSimulator implements WeatherDataSimulator {
 
             producer.send(new KeyedMessage<String, WeatherData>(topic, weatherData));
 
-            try {
-                Thread.sleep(random.nextInt(2000) + 1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                Thread.sleep(random.nextInt(2000) + 1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
         }
     }
 

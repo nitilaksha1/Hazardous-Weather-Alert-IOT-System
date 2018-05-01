@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
 
-app.get('/',function(req, res) {
+app.get('/das',function(req, res) {
     res.sendFile(__dirname + '/client/dashboard.html');
 });
 

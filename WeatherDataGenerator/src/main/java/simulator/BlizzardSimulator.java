@@ -37,11 +37,11 @@ public class BlizzardSimulator implements WeatherDataSimulator {
 
             producer.send(new KeyedMessage<String, WeatherData>(topic, weatherData));
 
-            try {
-                Thread.sleep(random.nextInt(2000) + 1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
         }
     }
 

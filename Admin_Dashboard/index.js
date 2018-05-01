@@ -2,11 +2,15 @@ var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
 
-app.get('/',function(req, res) {
+app.get('/dashboard',function(req, res) {
     res.sendFile(__dirname + '/client/dashboard.html');
 });
 
-serv.listen(4500);
+app.get('/car',function(req, res) {
+    res.sendFile(__dirname + '/client/car.html');
+});
+
+serv.listen(1500);
 
 var io = require('socket.io')(serv,{});
 
@@ -36,7 +40,7 @@ app.use('/client', express.static(__dirname + '/client'));
 // client.connect(9007, '127.0.0.1', function() {
 // 	console.log('Connected');
 // });
-	  	
+
 // client.on('data', function(data) {
 // 	console.log('Received: ' + data);
 // 	// socket.emit('alert', "Alert: " + data);

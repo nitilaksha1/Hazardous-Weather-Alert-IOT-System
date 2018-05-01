@@ -66,8 +66,8 @@ public class StreamDataConsumer {
         JavaDStream<Tuple2<String, Tuple2<Double, Integer>>> speedsumStream2 =
                 carspeedcountPair.reduceByWindow(
                         (x,y) -> carmapFunc(x,y),
-                        Durations.seconds(15),
-                        Durations.seconds(15));
+                        Durations.seconds(16),
+                        Durations.seconds(16));
 
         JavaDStream<Tuple2<String, Double>> avgStream2 = speedsumStream2
                 .map(x -> new Tuple2(x._1, x._2._1/x._2._2));
@@ -190,6 +190,7 @@ public class StreamDataConsumer {
         KeyedMessage<String, WeatherNotificationData> keyedMessage = new KeyedMessage<>(topic,
                 weatherNotificationData);
         producer.send(keyedMessage);
+        System.out.println("Weather Update: " + weatherNotificationData);
     }
 
     private static void sendWeatherNotification(Properties properties,
@@ -214,7 +215,7 @@ public class StreamDataConsumer {
                     "Blizzard conditions ahead! Travel not recommended");
 
         }
-        else if (isFogWeather(precp, visibility)) {
+        else if (true) {
             //Send notification to sensor
             produceWeatherHazardAlert(properties,
                     type,
@@ -226,18 +227,18 @@ public class StreamDataConsumer {
                     visibility,
                     "Thick Fog conditions ahead! Drive slowly");
         }
-        else if (isWindyWeather(precp, windSpeed)) {
-            //Send notification to sensor
-            produceWeatherHazardAlert(properties,
-                    type,
-                    sensorId,
-                    latitude,
-                    longitude,
-                    temperature,
-                    windSpeed,
-                    visibility,
-                    "Windy conditions ahead! High-rise vehicles should proceed with caution!");
-        }
+//        else if (isWindyWeather(precp, windSpeed)) {
+//            //Send notification to sensor
+//            produceWeatherHazardAlert(properties,
+//                    type,
+//                    sensorId,
+//                    latitude,
+//                    longitude,
+//                    temperature,
+//                    windSpeed,
+//                    visibility,
+//                    "Windy conditions ahead! High-rise vehicles should proceed with caution!");
+//        }
     }
 
     /*
@@ -268,8 +269,8 @@ public class StreamDataConsumer {
                 Tuple6<Double, Double, Double, Double, Double, Integer>>>
                 weathersumStream = weatherDataPair.reduceByWindow(
                         (x,y) -> weatherFunc(x,y),
-                        Durations.seconds(5),
-                        Durations.seconds(5));
+                        Durations.seconds(2),
+                        Durations.seconds(2));
 
         //Convert <<sensorId, Precipitation> -> <sum of temperatures, sum of windspeeds, sum of visiblity, sum of keycounts>
         //TO
@@ -330,7 +331,7 @@ public class StreamDataConsumer {
 
 
         //Print average weather statistics for each sensorId
-        avgWeatherStream.print();
+        //avgWeatherStream.print();
 
     }
 
@@ -347,7 +348,7 @@ public class StreamDataConsumer {
                 .set("spark.streaming.concurrentJobs", "4")
                 .set("spark.cassandra.connection.host", "localhost");
 
-        JavaStreamingContext javaStreamingContext = new JavaStreamingContext(sparkConf, Durations.seconds(5));
+        JavaStreamingContext javaStreamingContext = new JavaStreamingContext(sparkConf, Durations.seconds(2));
         javaStreamingContext.checkpoint(properties.getProperty("com.iot.app.spark.checkpoint.dir"));
 
         Map<String, String> kafkaParams = new HashMap<String, String>();
