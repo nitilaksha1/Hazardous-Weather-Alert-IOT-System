@@ -1,7 +1,7 @@
-# Distributed Systems Project
+# Hazardous Weather Alert System Using IOT and Edge Computing
 
 ## Goal
-Demonstrating the usage of Spark and Messaging systems like Kafka to analyze IOT data patterns and provide real-time analytics and alerting
+Demonstrating the usage of Spark and Messaging systems like Kafka to analyze IOT data patterns and provide real-time hazardous weather alerts in a connected car ecosystem
 
 ## Data Sources
 * Vehicle Data from cars
@@ -23,23 +23,35 @@ Demonstrating the usage of Spark and Messaging systems like Kafka to analyze IOT
 * Fog - Visibility < 2 miles and timeElapsed > 1 hrs
 
 ## Architecture Diagram
+![picture](Architecture-2.jpg)
 
-## Communication Protocol Between Car and Sensor
+## Architectural Components
+* <b>Data Sources (Connected Car and Weather Sensor)</b>
+    * Connected car publishes car coordinates, speed, route and destination to the RSU
+    * Weather sensor publishes temperature, visibility, precipitation, wind speed to the RSU
+    * Hazardous Weather alerts are published by  cloud (Spark)
+* <b>Cloud Processing Engine (Spark)</b>
+    * Spark is the consumer of car and weather data
+* <b>Edge Devices (Connected car, Weather sensor, RSU)</b>
+    * RSU is a edge device that has both thin client and fat client capabilities.
+    * Cars and weather sensors have limited capabilities and can only send data to RSU
+    * Car connects with the RSU within its range and is alerted about hazardous weather
+    
+## Communication Protocol Between Car and RSU
 * The mode of communication will be <b>TCP</b> as the connection has to stay active to send updates back to car
 * The car has the <b>list of known hosts</b> it can connect to once it is started
 * The sensor has a limited connection pool i.e at any instance the sensor can only be connected to limited number of cars
 
-## Communication Protocol Between Sensor and Kafka Broker
+## Communication Between Between Weather sensor and RSU
 
-## Communication Between Between Sensor and Spark
-
-## Communication Between Kafka and Spark
+## Communication Protocol Between RSU and Spark
 
 ## Data Model
 ### Car Data
 ```
 public class CarData implements Serializable {
-    private String carId;
+    private String type;
+    private String uuid;
     private String latitude;
     private String longitude;
     private Long timestamp;
@@ -67,33 +79,20 @@ public enum Precipitation {
     NORMAL
 }
 ```
-
-## Functionality related to vehicles
-
-* Create vehicle topic on broker
-* Define vehicle data class
-* Write a vehicle data generator as kafka prod
-* Create a spark stream to listen for vehicle_topic
-* Implement serializer_desrializer for vehicle data
-* Print the contents of spark stream to check vehicle data
-
-## Functionality related to weather
-
-* Weather data class
-* Weather producer class
-* Spark stream for weather producer
-
-## Establishing communication between car and sensor
-
-* Making sensor a receiver
-* Publish weather data to car
-* Publish hazards data to car
-
+### Hazardous Weather Notification Data
+```
+public class WeatherNotificationData implements Serializable {
+    private String type;
+    private String sensorId;
+    private Double latitude;
+    private Double longitude;
+    private Double temperature;
+    private Double windspeed;
+    private Double visibility;
+    private String weatherAlert;
+}
+```
 ## TODO
-* The average weather data has to be leveraged publish the alert to the weather alerts topic
-* The sensor has to act on the weather alert and notify the car
-* Establish connection between car and sensor
-* Batch car statistics and weather statistics by storing on Cassandra
 * Run analytics on top of cassandra through RESTFUL service and webUI
 * Think about using the same producer code on a rasberryPi and ODroid device instead of a computer
 * Think of tuning performance and energy requirements for computation happening on the edge device
