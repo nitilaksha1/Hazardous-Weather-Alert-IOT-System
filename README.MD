@@ -94,6 +94,4 @@ public class WeatherNotificationData implements Serializable {
 ```
 ## TODO
 * Run analytics on top of cassandra through RESTFUL service and webUI
-* Think about using the same producer code on a rasberryPi and ODroid device instead of a computer
-* Think of tuning performance and energy requirements for computation happening on the edge device
 
